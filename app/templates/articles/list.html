@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Articles - {{ app_title }}{% endblock %}
+{% block content %}
+<hgroup>
+    <h1>Articles</h1>
+    <p>{{ total }} article{{ 's' if total != 1 }} found</p>
+</hgroup>
+
+<form method="get" action="/articles" class="grid">
+    <input type="search" name="q" value="{{ q }}" placeholder="Search articles...">
+    <select name="tag">
+        <option value="">All tags</option>
+        {% for t in all_tags %}
+        <option value="{{ t.name }}" {{ 'selected' if t.name == tag }}>{{ t.name }}</option>
+        {% endfor %}
+    </select>
+    <select name="status">
+        <option value="">All statuses</option>
+        <option value="pending" {{ 'selected' if status == 'pending' }}>Pending</option>
+        <option value="enriched" {{ 'selected' if status == 'enriched' }}>Enriched</option>
+        <option value="error" {{ 'selected' if status == 'error' }}>Error</option>
+    </select>
+    <button type="submit">Filter</button>
+</form>
+
+<p><a href="/articles/add" role="button" class="outline">Add Article</a></p>
+
+{% if articles %}
+<table>
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Source</th>
+            <th>Relevance</th>
+            <th>Reading Time</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for a in articles %}
+        <tr>
+            <td>
+                <a href="/articles/{{ a.id }}">{{ a.title }}</a>
+                {% for at in a.article_tags[:3] %}
+                <small><mark>{{ at.tag.name }}</mark></small>
+                {% endfor %}
+            </td>
+            <td>{{ a.source }}</td>
+            <td>{{ '%.0f%%'|format(a.relevance_score * 100) if a.relevance_score else '-' }}</td>
+            <td>{{ '%d min'|format(a.reading_time_minutes) if a.reading_time_minutes else '-' }}</td>
+            <td>{{ a.status }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% if total_pages > 1 %}
+<nav>
+    <ul>
+        {% if page > 1 %}
+        <li><a href="/articles?q={{ q }}&tag={{ tag }}&status={{ status }}&page={{ page - 1 }}">Previous</a></li>
+        {% endif %}
+        <li>Page {{ page }} of {{ total_pages }}</li>
+        {% if page < total_pages %}
+        <li><a href="/articles?q={{ q }}&tag={{ tag }}&status={{ status }}&page={{ page + 1 }}">Next</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% else %}
+<p>No articles match your search.</p>
+{% endif %}
+{% endblock %}

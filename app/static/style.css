@@ -1,0 +1,45 @@
+/* AICrawler custom styles */
+
+nav .outline {
+    padding: 0.3rem 0.8rem;
+    font-size: 0.85rem;
+}
+
+mark {
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    margin-right: 0.3rem;
+}
+
+table small {
+    color: var(--pico-muted-color);
+}
+
+form[style*="display:inline"] {
+    display: inline;
+}
+
+form[style*="display:inline"] button {
+    padding: 0.2rem 0.6rem;
+    font-size: 0.8rem;
+    margin: 0;
+}
+
+footer.container {
+    margin-top: 3rem;
+    padding: 1rem 0;
+    text-align: center;
+    color: var(--pico-muted-color);
+}
+
+/* Loading indicator for HTMX */
+.htmx-indicator {
+    display: none;
+}
+.htmx-request .htmx-indicator {
+    display: inline;
+}
+.htmx-request.htmx-indicator {
+    display: inline;
+}

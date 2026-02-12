@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Query Result - {{ app_title }}{% endblock %}
+{% block content %}
+<h1>{{ result.title }}</h1>
+<p class="secondary"><strong>Query:</strong> {{ query }}</p>
+<p>{{ result.description }}</p>
+<p><strong>Total reading time:</strong> {{ result.total_reading_time }} minutes</p>
+
+{% for section in result.sections %}
+<article>
+    <header><h3>{{ section.title }}</h3></header>
+    <ul>
+        {% for article in section.articles_data %}
+        <li>
+            <a href="/articles/{{ article.id }}">{{ article.title }}</a>
+            {% if article.source %}<small> &mdash; {{ article.source }}</small>{% endif %}
+            {% if article.reading_time_minutes %}<small> ({{ article.reading_time_minutes }} min)</small>{% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+    {% for note in section.notes %}
+    <p><small>{{ note }}</small></p>
+    {% endfor %}
+</article>
+{% endfor %}
+
+{% if result.discussion_prompts %}
+<article>
+    <header><h3>Discussion Prompts</h3></header>
+    <ol>
+        {% for prompt in result.discussion_prompts %}
+        <li>{{ prompt }}</li>
+        {% endfor %}
+    </ol>
+</article>
+{% endif %}
+
+{% if result.reading_list_id %}
+<p><a href="/reading-lists/{{ result.reading_list_id }}" role="button">View Saved Reading List</a></p>
+{% endif %}
+
+<p><a href="/interrogation">&larr; Ask another question</a></p>
+{% endblock %}

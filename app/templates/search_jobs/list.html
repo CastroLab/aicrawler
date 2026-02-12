@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Search Jobs - {{ app_title }}{% endblock %}
+{% block content %}
+<h1>Search Jobs</h1>
+<p><a href="/search-jobs/add" role="button" class="outline">Add Search Job</a></p>
+
+{% if jobs %}
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Query</th>
+            <th>Schedule</th>
+            <th>Enabled</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for job in jobs %}
+        <tr>
+            <td>{{ job.name }}</td>
+            <td><small>{{ job.query[:80] }}{{ '...' if job.query|length > 80 }}</small></td>
+            <td>{{ job.schedule }}</td>
+            <td>{{ 'Yes' if job.enabled else 'No' }}</td>
+            <td>
+                <form method="post" action="/search-jobs/{{ job.id }}/run" style="display:inline">
+                    <button type="submit" class="outline small">Run Now</button>
+                </form>
+                <form method="post" action="/search-jobs/{{ job.id }}/toggle" style="display:inline">
+                    <button type="submit" class="outline secondary small">{{ 'Disable' if job.enabled else 'Enable' }}</button>
+                </form>
+                <a href="/search-jobs/{{ job.id }}/history">History</a>
+                <form method="post" action="/search-jobs/{{ job.id }}/delete" style="display:inline"
+                      onsubmit="return confirm('Delete this search job?')">
+                    <button type="submit" class="outline secondary small">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No search jobs configured. <a href="/search-jobs/add">Create one</a> to start discovering articles.</p>
+{% endif %}
+{% endblock %}

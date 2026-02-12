@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Add Search Job - {{ app_title }}{% endblock %}
+{% block content %}
+<h1>Add Search Job</h1>
+<form method="post" action="/search-jobs/add">
+    <label for="name">Name
+        <input type="text" id="name" name="name" required placeholder="e.g., AI in Higher Education">
+    </label>
+    <label for="query">Search Query
+        <textarea id="query" name="query" required rows="3"
+                  placeholder="e.g., Recent research on AI policy in higher education institutions"></textarea>
+    </label>
+    <label for="schedule">Schedule
+        <select id="schedule" name="schedule">
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+        </select>
+    </label>
+    <button type="submit">Create Search Job</button>
+</form>
+{% endblock %}

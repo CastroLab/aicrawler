@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }} - {{ app_title }}{% endblock %}
+{% block content %}
+<hgroup>
+    <h1>{{ article.title }}</h1>
+    <p>
+        {% if article.source %}{{ article.source }} &middot; {% endif %}
+        {{ article.content_type }}
+        {% if article.published_date %} &middot; {{ article.published_date }}{% endif %}
+        &middot; Status: <strong>{{ article.status }}</strong>
+    </p>
+</hgroup>
+
+<p><a href="{{ article.url }}" target="_blank" rel="noopener">Open original &rarr;</a></p>
+
+{% if article.authors %}
+<p><strong>Authors:</strong> {{ article.authors | map(attribute='name') | join(', ') }}</p>
+{% endif %}
+
+{% if article.relevance_score is not none %}
+<div class="grid">
+    <div>
+        <strong>Relevance:</strong> {{ '%.0f%%'|format(article.relevance_score * 100) }}
+    </div>
+    <div>
+        <strong>Reading Time:</strong> {{ article.reading_time_minutes or '?' }} min
+    </div>
+    <div>
+        <strong>Word Count:</strong> {{ article.word_count or '?' }}
+    </div>
+</div>
+{% endif %}
+
+{% if article.article_tags %}
+<p><strong>Tags:</strong>
+    {% for at in article.article_tags %}
+    <mark>{{ at.tag.name }}</mark>
+    <small class="secondary">({{ at.tag.category }}{% if at.confidence < 1 %}, {{ '%.0f%%'|format(at.confidence * 100) }}{% endif %})</small>
+    {% endfor %}
+</p>
+{% endif %}
+
+{% if article.summary %}
+<article>
+    <header><h3>Summary</h3></header>
+    {{ article.summary | replace('\n', '<br>') | safe }}
+</article>
+{% endif %}
+
+{% if article.key_findings %}
+<article>
+    <header><h3>Key Findings</h3></header>
+    {{ article.key_findings | replace('\n', '<br>') | safe }}
+</article>
+{% endif %}
+
+<hr>
+<div class="grid">
+    <a href="/articles" role="button" class="outline">&larr; Back to articles</a>
+    <form method="post" action="/articles/{{ article.id }}/delete" style="text-align:right"
+          onsubmit="return confirm('Delete this article?')">
+        <button type="submit" class="secondary outline">Delete</button>
+    </form>
+</div>
+{% endblock %}

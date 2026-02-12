@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Admin - {{ app_title }}{% endblock %}
+{% block content %}
+<h1>Admin Dashboard</h1>
+
+<div class="grid">
+    <article>
+        <header>Enrichment</header>
+        <p><strong>{{ pending_count }}</strong> articles pending enrichment</p>
+        <footer>
+            <form method="post" action="/admin/enrich-now">
+                <button type="submit" {{ 'disabled' if pending_count == 0 }}>Enrich Now</button>
+            </form>
+        </footer>
+    </article>
+    <article>
+        <header>Discovery</header>
+        <p>Run all enabled search jobs immediately.</p>
+        <footer>
+            <form method="post" action="/admin/discover-now">
+                <button type="submit">Discover Now</button>
+            </form>
+        </footer>
+    </article>
+</div>
+
+<h2>Recent Search Executions</h2>
+{% if recent_executions %}
+<table>
+    <thead>
+        <tr><th>Job</th><th>Started</th><th>Status</th><th>Found</th><th>New</th></tr>
+    </thead>
+    <tbody>
+        {% for ex in recent_executions %}
+        <tr>
+            <td>{{ ex.search_job.name if ex.search_job else '?' }}</td>
+            <td>{{ ex.started_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td>{{ ex.status }}</td>
+            <td>{{ ex.articles_found }}</td>
+            <td>{{ ex.articles_new }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No search executions yet.</p>
+{% endif %}
+{% endblock %}

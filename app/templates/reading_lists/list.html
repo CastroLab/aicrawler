@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Reading Lists - {{ app_title }}{% endblock %}
+{% block content %}
+<h1>Reading Lists</h1>
+
+{% if reading_lists %}
+<table>
+    <thead>
+        <tr><th>Title</th><th>Reading Time</th><th>Created</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+        {% for rl in reading_lists %}
+        <tr>
+            <td><a href="/reading-lists/{{ rl.id }}">{{ rl.title }}</a></td>
+            <td>{{ '%d min' % rl.total_reading_time if rl.total_reading_time else '-' }}</td>
+            <td>{{ rl.created_at.strftime('%Y-%m-%d') }}</td>
+            <td>
+                <a href="/reading-lists/{{ rl.id }}/export">Export MD</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No reading lists yet. <a href="/interrogation">Ask a question</a> to generate one.</p>
+{% endif %}
+{% endblock %}

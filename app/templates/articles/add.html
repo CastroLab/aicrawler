@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Add Article - {{ app_title }}{% endblock %}
+{% block content %}
+<h1>Add Article</h1>
+
+{% if error %}
+<p role="alert" style="color: var(--pico-color-red-500);">{{ error }}</p>
+{% endif %}
+
+<form method="post" action="/articles/add">
+    <label for="url">URL (required)
+        <input type="url" id="url" name="url" value="{{ url|default('') }}" required>
+    </label>
+    <label for="title">Title (required)
+        <input type="text" id="title" name="title" value="{{ title|default('') }}" required>
+    </label>
+    <div class="grid">
+        <label for="source">Source
+            <input type="text" id="source" name="source" placeholder="e.g., Nature, Inside Higher Ed">
+        </label>
+        <label for="published_date">Published Date
+            <input type="date" id="published_date" name="published_date">
+        </label>
+    </div>
+    <label for="content_type">Content Type
+        <select id="content_type" name="content_type">
+            <option value="article">Article</option>
+            <option value="paper">Research Paper</option>
+            <option value="report">Report</option>
+            <option value="blog_post">Blog Post</option>
+            <option value="policy_document">Policy Document</option>
+            <option value="news">News</option>
+        </select>
+    </label>
+    <label for="authors">Authors (comma-separated)
+        <input type="text" id="authors" name="authors" placeholder="Jane Doe, John Smith">
+    </label>
+    <button type="submit">Add Article</button>
+</form>
+{% endblock %}

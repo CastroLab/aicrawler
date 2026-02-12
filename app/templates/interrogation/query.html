@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Ask - {{ app_title }}{% endblock %}
+{% block content %}
+<h1>Ask a Question</h1>
+<p>Ask in natural language. For example: <em>"Create a reading list with contrasting opinions on AI academic integrity, no more than an hour of reading, with discussion prompts."</em></p>
+
+<form method="post" action="/interrogation/query">
+    <label for="query">Your Question
+        <textarea id="query" name="query" rows="3" required
+                  placeholder="What would you like to explore?"></textarea>
+    </label>
+    <button type="submit">Generate Reading List</button>
+</form>
+
+{% if recent_queries %}
+<h2>Recent Queries</h2>
+<table>
+    <thead>
+        <tr><th>Query</th><th>Date</th></tr>
+    </thead>
+    <tbody>
+        {% for q in recent_queries %}
+        <tr>
+            <td>{{ q.query[:100] }}{{ '...' if q.query|length > 100 }}</td>
+            <td>{{ q.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% endblock %}

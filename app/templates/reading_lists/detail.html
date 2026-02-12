@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}{{ reading_list.title }} - {{ app_title }}{% endblock %}
+{% block content %}
+<hgroup>
+    <h1>{{ reading_list.title }}</h1>
+    {% if reading_list.total_reading_time %}
+    <p>Estimated reading time: {{ reading_list.total_reading_time }} minutes</p>
+    {% endif %}
+</hgroup>
+
+{% if reading_list.description %}
+<p>{{ reading_list.description }}</p>
+{% endif %}
+
+{% for section_name, items in sections.items() %}
+<article>
+    <header><h3>{{ section_name }}</h3></header>
+    <ol>
+        {% for item in items %}
+        <li>
+            <a href="/articles/{{ item.article.id }}">{{ item.article.title }}</a>
+            {% if item.article.source %}<small> &mdash; {{ item.article.source }}</small>{% endif %}
+            {% if item.article.reading_time_minutes %}<small> ({{ item.article.reading_time_minutes }} min)</small>{% endif %}
+            {% if item.notes %}<br><small>{{ item.notes }}</small>{% endif %}
+        </li>
+        {% endfor %}
+    </ol>
+</article>
+{% endfor %}
+
+{% if reading_list.discussion_prompts %}
+<article>
+    <header><h3>Discussion Prompts</h3></header>
+    <ol>
+        {% for prompt in reading_list.discussion_prompts.split('\n') %}
+        {% if prompt.strip() %}
+        <li>{{ prompt.strip() }}</li>
+        {% endif %}
+        {% endfor %}
+    </ol>
+</article>
+{% endif %}
+
+<div class="grid">
+    <a href="/reading-lists" role="button" class="outline">&larr; All Reading Lists</a>
+    <a href="/reading-lists/{{ reading_list.id }}/export" role="button" class="outline">Export Markdown</a>
+    <form method="post" action="/reading-lists/{{ reading_list.id }}/delete"
+          onsubmit="return confirm('Delete this reading list?')">
+        <button type="submit" class="secondary outline">Delete</button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - {{ app_title }}{% endblock %}
+{% block content %}
+<h1>Dashboard</h1>
+<div class="grid">
+    <article>
+        <header>Articles</header>
+        <p><strong>{{ stats.total_articles }}</strong> total</p>
+        <p>{{ stats.pending_articles }} pending &middot; {{ stats.enriched_articles }} enriched</p>
+        <footer><a href="/articles">Browse articles</a></footer>
+    </article>
+    <article>
+        <header>Discovery</header>
+        <p><strong>{{ stats.search_jobs }}</strong> active search jobs</p>
+        <footer><a href="/search-jobs">Manage jobs</a></footer>
+    </article>
+    <article>
+        <header>Knowledge</header>
+        <p><strong>{{ stats.total_tags }}</strong> tags &middot; <strong>{{ stats.reading_lists }}</strong> reading lists</p>
+        <footer><a href="/interrogation">Ask a question</a></footer>
+    </article>
+</div>
+
+<h2>Recent Articles</h2>
+{% if recent_articles %}
+<table>
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Source</th>
+            <th>Status</th>
+            <th>Added</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for a in recent_articles %}
+        <tr>
+            <td><a href="/articles/{{ a.id }}">{{ a.title }}</a></td>
+            <td>{{ a.source }}</td>
+            <td>
+                {% if a.status == 'enriched' %}
+                <mark>enriched</mark>
+                {% elif a.status == 'pending' %}
+                <span class="secondary">pending</span>
+                {% else %}
+                {{ a.status }}
+                {% endif %}
+            </td>
+            <td>{{ a.created_at.strftime('%Y-%m-%d') }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No articles yet. <a href="/articles/add">Add one manually</a> or <a href="/search-jobs">configure a search job</a>.</p>
+{% endif %}
+{% endblock %}
