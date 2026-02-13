@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Generate Digest - {{ app_title }}{% endblock %}
+{% block content %}
+<h1>Generate Digest</h1>
+<p>Create a briefing from enriched articles in the selected date range. This will call the AI to synthesize a thematic summary.</p>
+
+<form method="post" action="/digests/create">
+    <div class="grid">
+        <label>
+            Period Start
+            <input type="date" name="period_start" value="{{ default_start }}" required>
+        </label>
+        <label>
+            Period End
+            <input type="date" name="period_end" value="{{ default_end }}" required>
+        </label>
+    </div>
+    <button type="submit">Generate Digest</button>
+</form>
+
+<p><a href="/digests">&larr; Back to Digests</a></p>
+{% endblock %}

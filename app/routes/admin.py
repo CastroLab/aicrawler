@@ -23,6 +23,11 @@ async def admin_dashboard(
         .all()
     )
     pending_count = db.query(Article).filter(Article.status == "pending").count()
+    enrichable_count = (
+        db.query(Article)
+        .filter(Article.status.in_(["fetched", "fetch_failed"]))
+        .count()
+    )
     return templates.TemplateResponse(
         "admin/dashboard.html",
         {
@@ -30,8 +35,21 @@ async def admin_dashboard(
             "user": user,
             "recent_executions": recent_executions,
             "pending_count": pending_count,
+            "enrichable_count": enrichable_count,
         },
     )
+
+
+@router.post("/fetch-now")
+async def fetch_now(
+    request: Request,
+    user=Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    from app.services.fetching import fetch_pending_articles
+
+    result = fetch_pending_articles(db)
+    return RedirectResponse("/admin", status_code=303)
 
 
 @router.post("/enrich-now")

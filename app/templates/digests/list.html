@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Digests - {{ app_title }}{% endblock %}
+{% block content %}
+<hgroup>
+    <h1>Digests</h1>
+    <p>Periodic briefings for the AI working group</p>
+</hgroup>
+
+<p><a href="/digests/create" role="button">Generate New Digest</a></p>
+
+{% if digests %}
+<table>
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Type</th>
+            <th>Period</th>
+            <th>Articles</th>
+            <th>Status</th>
+            <th>Created</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for d in digests %}
+        <tr>
+            <td><a href="/digests/{{ d.id }}">{{ d.title }}</a></td>
+            <td>{{ d.digest_type }}</td>
+            <td>
+                {% if d.period_start and d.period_end %}
+                {{ d.period_start.strftime('%b %d') }} &ndash; {{ d.period_end.strftime('%b %d, %Y') }}
+                {% else %}
+                &mdash;
+                {% endif %}
+            </td>
+            <td>{{ d.article_count }}</td>
+            <td>
+                {% if d.status == 'completed' %}
+                <mark>completed</mark>
+                {% elif d.status == 'generating' %}
+                <span class="secondary">generating...</span>
+                {% elif d.status == 'error' %}
+                <span style="color: var(--pico-color-red-500)">error</span>
+                {% else %}
+                {{ d.status }}
+                {% endif %}
+            </td>
+            <td>{{ d.created_at.strftime('%Y-%m-%d') }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No digests yet. Generate one to create a briefing from your enriched articles.</p>
+{% endif %}
+{% endblock %}

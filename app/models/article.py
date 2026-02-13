@@ -1,6 +1,6 @@
 import datetime as dt
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -24,6 +24,7 @@ class Article(Base):
     reading_time_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     status: Mapped[str] = mapped_column(String(32), default="pending", index=True)
+    has_content: Mapped[bool] = mapped_column(Boolean, default=False)
 
     created_at: Mapped[dt.datetime] = mapped_column(
         DateTime, server_default=func.now()
@@ -37,6 +38,9 @@ class Article(Base):
     )
     article_tags: Mapped[list["ArticleTag"]] = relationship(
         "ArticleTag", back_populates="article", cascade="all, delete-orphan"
+    )
+    content: Mapped["ArticleContent | None"] = relationship(
+        "ArticleContent", back_populates="article", uselist=False, cascade="all, delete-orphan"
     )
 
     def __repr__(self) -> str:

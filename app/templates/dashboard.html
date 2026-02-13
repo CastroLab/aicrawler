@@ -6,7 +6,7 @@
     <article>
         <header>Articles</header>
         <p><strong>{{ stats.total_articles }}</strong> total</p>
-        <p>{{ stats.pending_articles }} pending &middot; {{ stats.enriched_articles }} enriched</p>
+        <p>{{ stats.pending_articles }} pending &middot; {{ stats.fetched_articles }} fetched &middot; {{ stats.enriched_articles }} enriched</p>
         <footer><a href="/articles">Browse articles</a></footer>
     </article>
     <article>
@@ -17,9 +17,21 @@
     <article>
         <header>Knowledge</header>
         <p><strong>{{ stats.total_tags }}</strong> tags &middot; <strong>{{ stats.reading_lists }}</strong> reading lists</p>
+        <p><strong>{{ stats.digests }}</strong> digests</p>
         <footer><a href="/interrogation">Ask a question</a></footer>
     </article>
 </div>
+
+{% if latest_digest %}
+<article>
+    <header>Latest Digest</header>
+    <p><a href="/digests/{{ latest_digest.id }}"><strong>{{ latest_digest.title }}</strong></a></p>
+    {% if latest_digest.period_start and latest_digest.period_end %}
+    <p>{{ latest_digest.period_start.strftime('%b %d') }} &ndash; {{ latest_digest.period_end.strftime('%b %d, %Y') }} &middot; {{ latest_digest.article_count }} articles</p>
+    {% endif %}
+    <footer><a href="/digests">View all digests</a></footer>
+</article>
+{% endif %}
 
 <h2>Recent Articles</h2>
 {% if recent_articles %}
@@ -40,8 +52,12 @@
             <td>
                 {% if a.status == 'enriched' %}
                 <mark>enriched</mark>
+                {% elif a.status == 'fetched' %}
+                <mark class="secondary">fetched</mark>
                 {% elif a.status == 'pending' %}
                 <span class="secondary">pending</span>
+                {% elif a.status == 'fetch_failed' %}
+                <span style="color: var(--pico-color-orange-500)">fetch failed</span>
                 {% else %}
                 {{ a.status }}
                 {% endif %}

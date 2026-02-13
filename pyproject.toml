@@ -18,6 +18,7 @@ dependencies = [
     "passlib[bcrypt]>=1.7",
     "itsdangerous>=2.2",
     "httpx>=0.28",
+    "trafilatura>=2.0",
 ]
 
 [project.optional-dependencies]

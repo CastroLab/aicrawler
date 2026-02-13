@@ -29,7 +29,12 @@ def create_app() -> FastAPI:
     static_dir = Path(__file__).parent / "static"
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
-    # Register routes
+    # Register API routes
+    from app.api.v1 import api_router
+
+    app.include_router(api_router)
+
+    # Register web routes
     from app.routes.auth import router as auth_router
     from app.routes.articles import router as articles_router
     from app.routes.dashboard import router as dashboard_router
@@ -37,6 +42,7 @@ def create_app() -> FastAPI:
     from app.routes.interrogation import router as interrogation_router
     from app.routes.reading_lists import router as reading_lists_router
     from app.routes.admin import router as admin_router
+    from app.routes.digests import router as digests_router
 
     app.include_router(auth_router)
     app.include_router(dashboard_router)
@@ -45,6 +51,7 @@ def create_app() -> FastAPI:
     app.include_router(interrogation_router, prefix="/interrogation")
     app.include_router(reading_lists_router, prefix="/reading-lists")
     app.include_router(admin_router, prefix="/admin")
+    app.include_router(digests_router, prefix="/digests")
 
     @app.exception_handler(_LoginRequired)
     async def login_required_handler(request: Request, exc: _LoginRequired):

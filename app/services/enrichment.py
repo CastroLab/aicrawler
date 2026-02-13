@@ -4,22 +4,37 @@ from sqlalchemy.orm import Session
 
 from app.clients.claude import call_claude_structured
 from app.models.article import Article
+from app.models.content import ArticleContent
 from app.models.tag import ArticleTag, Tag
 from app.services.reading_time import estimate_reading_time
 
 logger = logging.getLogger(__name__)
 
+# Maximum words to include from full text in the prompt (~12K words)
+MAX_CONTENT_WORDS = 12000
+
 ENRICHMENT_SCHEMA = {
     "type": "object",
-    "required": ["summary", "key_findings", "tags", "relevance_score", "content_type", "word_count"],
+    "required": [
+        "summary", "key_findings", "tags", "relevance_score",
+        "content_type", "word_count",
+    ],
     "properties": {
         "summary": {
             "type": "string",
-            "description": "2-3 paragraph summary of the article's content and significance",
+            "description": (
+                "2-3 paragraph executive summary leading with 'so what' — why should "
+                "an AI working group at a higher education institution care about this? "
+                "What are the institutional implications?"
+            ),
         },
         "key_findings": {
             "type": "string",
-            "description": "Bullet-point list of the most important findings or arguments",
+            "description": (
+                "Bullet-point list of actionable findings focused on institutional "
+                "implications. Each bullet should help a committee member understand "
+                "what this means for their college or university."
+            ),
         },
         "tags": {
             "type": "array",
@@ -30,7 +45,10 @@ ENRICHMENT_SCHEMA = {
                     "name": {"type": "string", "description": "Tag name, lowercase"},
                     "category": {
                         "type": "string",
-                        "enum": ["topic", "stance", "methodology", "policy_area"],
+                        "enum": [
+                            "topic", "stance", "methodology", "policy_area",
+                            "sector", "urgency",
+                        ],
                     },
                     "confidence": {"type": "number", "minimum": 0, "maximum": 1},
                 },
@@ -40,11 +58,20 @@ ENRICHMENT_SCHEMA = {
             "type": "number",
             "minimum": 0,
             "maximum": 1,
-            "description": "How relevant is this to AI policy in higher education? 0=not relevant, 1=highly relevant",
+            "description": (
+                "How relevant is this to an AI working group at a higher education "
+                "institution? Scoring guide: 0.7-1.0 = potential agenda item (directly "
+                "impacts institutional AI policy, teaching, or operations), 0.4-0.7 = "
+                "useful background (broader trends that inform the group's work), "
+                "0.0-0.4 = tangential (interesting but not actionable for the group)"
+            ),
         },
         "content_type": {
             "type": "string",
-            "enum": ["article", "paper", "report", "blog_post", "policy_document", "news", "other"],
+            "enum": [
+                "article", "paper", "report", "blog_post",
+                "policy_document", "news", "other",
+            ],
         },
         "word_count": {
             "type": "integer",
@@ -53,31 +80,99 @@ ENRICHMENT_SCHEMA = {
     },
 }
 
-SYSTEM_PROMPT = """You are an AI research librarian specializing in AI policy for higher education institutions.
+SYSTEM_PROMPT = """You are a research analyst supporting an AI working group at a \
+higher education institution. The working group includes faculty, administrators, and \
+IT leaders who need to stay informed about AI developments that affect their institution.
 
-Analyze the article information provided and produce a structured enrichment with:
-1. A clear 2-3 paragraph summary capturing the main arguments and significance
-2. Key findings as a bullet-point list
-3. Relevant tags across these categories:
-   - topic: subject matter (e.g., "academic integrity", "generative ai", "assessment")
-   - stance: perspective (e.g., "pro-regulation", "cautious optimism", "critical")
-   - methodology: research approach (e.g., "qualitative study", "policy analysis", "opinion")
-   - policy_area: institutional domain (e.g., "teaching", "research", "administration")
-4. A relevance score (0-1) for how useful this is to a college AI policy working group
-5. Content type classification
-6. Estimated word count"""
+Your job is to produce executive-level summaries that help the committee understand:
+- What happened and why it matters to higher education
+- Institutional implications (policy, teaching, research, operations, student experience)
+- Whether and how the working group should respond
+
+Scope of interest (in priority order):
+1. AI policy in higher education (primary focus)
+2. Broader ed tech trends affecting colleges and universities
+3. K-12 AI developments that will impact incoming students
+4. Workforce/employer AI expectations that affect curriculum
+5. Government AI regulation that may constrain or enable institutions
+
+Tag categories:
+- topic: subject matter (e.g., "academic integrity", "generative ai", "assessment", "curriculum")
+- stance: perspective (e.g., "pro-regulation", "cautious optimism", "critical", "neutral")
+- methodology: research approach (e.g., "qualitative study", "policy analysis", "opinion", "survey")
+- policy_area: institutional domain (e.g., "teaching", "research", "administration", "student services")
+- sector: where it applies (e.g., "higher_ed", "k12", "workforce", "government", "industry")
+- urgency: time-sensitivity (e.g., "breaking", "emerging", "established")
+
+Lead with the "so what" — committee members are busy and need to know quickly whether \
+this matters and what to do about it."""
+
+USER_PROMPT_WITH_CONTENT = """Article to analyze:
+Title: {title}
+URL: {url}
+Source: {source}
+Content Type: {content_type}
+Published: {published_date}
+
+--- Full Article Text ---
+{full_text}
+--- End Article Text ---
+
+Analyze this article and provide the structured enrichment. You have the full article \
+text above, so your summary should be substantive and specific, not generic."""
+
+USER_PROMPT_METADATA_ONLY = """Article to analyze:
+Title: {title}
+URL: {url}
+Source: {source}
+Content Type: {content_type}
+Published: {published_date}
+
+NOTE: Full article text is not available (the article may be behind a paywall or \
+could not be fetched). Provide your best analysis based on the title, source, and URL. \
+Be transparent that your analysis is based on metadata only — flag this limitation in \
+your summary. Estimate word count based on typical articles from this source."""
+
+
+def _truncate_text(text: str, max_words: int = MAX_CONTENT_WORDS) -> str:
+    """Truncate text to approximately max_words."""
+    words = text.split()
+    if len(words) <= max_words:
+        return text
+    return " ".join(words[:max_words]) + "\n\n[... truncated for length]"
 
 
 def enrich_article(db: Session, article: Article) -> bool:
     """Enrich a single article with AI-generated metadata. Returns True on success."""
-    user_prompt = f"""Article to analyze:
-Title: {article.title}
-URL: {article.url}
-Source: {article.source}
-Content Type: {article.content_type}
-Published: {article.published_date or 'Unknown'}
+    # Determine if we have content
+    content_record = (
+        db.query(ArticleContent)
+        .filter(ArticleContent.article_id == article.id)
+        .first()
+    )
+    has_full_text = (
+        content_record
+        and content_record.fetch_status in ("success", "partial")
+        and content_record.full_text
+    )
 
-Please analyze this article and provide the structured enrichment."""
+    if has_full_text:
+        user_prompt = USER_PROMPT_WITH_CONTENT.format(
+            title=article.title,
+            url=article.url,
+            source=article.source,
+            content_type=article.content_type,
+            published_date=article.published_date or "Unknown",
+            full_text=_truncate_text(content_record.full_text),
+        )
+    else:
+        user_prompt = USER_PROMPT_METADATA_ONLY.format(
+            title=article.title,
+            url=article.url,
+            source=article.source,
+            content_type=article.content_type,
+            published_date=article.published_date or "Unknown",
+        )
 
     result = call_claude_structured(
         system_prompt=SYSTEM_PROMPT,
@@ -94,9 +189,14 @@ Please analyze this article and provide the structured enrichment."""
     article.key_findings = result["key_findings"]
     article.relevance_score = result["relevance_score"]
     article.content_type = result["content_type"]
-    article.word_count = result["word_count"]
-    article.reading_time_minutes = estimate_reading_time(result["word_count"])
     article.status = "enriched"
+
+    # Use real word count from content if available, otherwise Claude's estimate
+    if has_full_text and content_record.word_count:
+        article.word_count = content_record.word_count
+    else:
+        article.word_count = result["word_count"]
+    article.reading_time_minutes = estimate_reading_time(article.word_count)
 
     # Get-or-create tags
     for tag_data in result.get("tags", []):
@@ -130,10 +230,14 @@ Please analyze this article and provide the structured enrichment."""
 
 
 def enrich_pending_articles(db: Session, batch_size: int = 10) -> dict:
-    """Enrich up to batch_size pending articles. Returns summary stats."""
+    """Enrich articles that are ready for enrichment. Returns summary stats.
+
+    Picks up both 'fetched' and 'fetch_failed' articles (not just 'pending'),
+    since fetch_failed articles can still be enriched from metadata.
+    """
     articles = (
         db.query(Article)
-        .filter(Article.status == "pending")
+        .filter(Article.status.in_(["fetched", "fetch_failed"]))
         .order_by(Article.created_at)
         .limit(batch_size)
         .all()

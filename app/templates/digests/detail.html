@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}{{ digest.title }} - {{ app_title }}{% endblock %}
+{% block content %}
+<hgroup>
+    <h1>{{ digest.title }}</h1>
+    {% if digest.period_start and digest.period_end %}
+    <p>{{ digest.period_start.strftime('%B %d, %Y') }} &mdash; {{ digest.period_end.strftime('%B %d, %Y') }} &middot; {{ digest.article_count }} articles</p>
+    {% endif %}
+</hgroup>
+
+{% if digest.status == 'error' %}
+<article style="border-left: 4px solid var(--pico-color-red-500)">
+    <p><strong>Generation failed.</strong> {{ digest.executive_summary or '' }}</p>
+</article>
+{% endif %}
+
+{% if digest.executive_summary and digest.status == 'completed' %}
+<article>
+    <header><h2>Executive Summary</h2></header>
+    <p>{{ digest.executive_summary | replace('\n', '<br>') | safe }}</p>
+</article>
+{% endif %}
+
+{% for section in digest.sections %}
+{% if section.section_type == 'theme' %}
+<article>
+    <header><h2>{{ section.title }}</h2></header>
+    <p>{{ section.content_markdown | replace('\n', '<br>') | safe }}</p>
+    {% if section.articles %}
+    <details>
+        <summary>Sources ({{ section.articles | length }})</summary>
+        <ul>
+            {% for da in section.articles %}
+            <li>
+                <a href="/articles/{{ da.article.id }}">{{ da.article.title }}</a>
+                {% if da.article.source %}<small> &mdash; {{ da.article.source }}</small>{% endif %}
+                {% if da.highlight_note %}<br><small>{{ da.highlight_note }}</small>{% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+    </details>
+    {% endif %}
+</article>
+{% endif %}
+{% endfor %}
+
+{% if digest.trend_analysis %}
+<article>
+    <header><h2>Trend Analysis</h2></header>
+    <p>{{ digest.trend_analysis | replace('\n', '<br>') | safe }}</p>
+</article>
+{% endif %}
+
+{% for section in digest.sections %}
+{% if section.section_type == 'recommendation' %}
+<article>
+    <header><h3>{{ section.title }}</h3></header>
+    {{ section.content_markdown | replace('\n', '<br>') | safe }}
+</article>
+{% endif %}
+{% endfor %}
+
+<div class="grid">
+    <a href="/digests" role="button" class="outline">&larr; All Digests</a>
+    {% if digest.full_markdown %}
+    <a href="/digests/{{ digest.id }}/export" role="button" class="outline">Export Markdown</a>
+    {% endif %}
+    <form method="post" action="/digests/{{ digest.id }}/delete"
+          onsubmit="return confirm('Delete this digest?')">
+        <button type="submit" class="secondary outline">Delete</button>
+    </form>
+</div>
+{% endblock %}

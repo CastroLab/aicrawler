@@ -5,11 +5,20 @@
 
 <div class="grid">
     <article>
+        <header>Content Fetching</header>
+        <p><strong>{{ pending_count }}</strong> articles pending fetch</p>
+        <footer>
+            <form method="post" action="/admin/fetch-now">
+                <button type="submit" {{ 'disabled' if pending_count == 0 }}>Fetch Now</button>
+            </form>
+        </footer>
+    </article>
+    <article>
         <header>Enrichment</header>
-        <p><strong>{{ pending_count }}</strong> articles pending enrichment</p>
+        <p><strong>{{ enrichable_count }}</strong> articles ready for enrichment</p>
         <footer>
             <form method="post" action="/admin/enrich-now">
-                <button type="submit" {{ 'disabled' if pending_count == 0 }}>Enrich Now</button>
+                <button type="submit" {{ 'disabled' if enrichable_count == 0 }}>Enrich Now</button>
             </form>
         </footer>
     </article>

@@ -13,6 +13,15 @@ class Settings(BaseSettings):
 
     DISCOVERY_CRON_HOUR: int = 6
     ENRICHMENT_INTERVAL_HOURS: int = 6
+    FETCHING_INTERVAL_HOURS: int = 2
+    FETCH_BATCH_SIZE: int = 20
+
+    # Digest scheduling
+    DIGEST_CRON_DAY: str = "mon"
+    DIGEST_CRON_HOUR: int = 7
+
+    # API auth
+    API_TOKEN: str = ""
 
     APP_TITLE: str = "AICrawler"
     DEBUG: bool = False
